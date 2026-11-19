@@ -1,0 +1,41 @@
+# Multi-stage Dockerfile for MCP Gateway & Terminal MCP Server
+FROM maven:3.9.9-eclipse-temurin-21 AS build
+WORKDIR /build
+
+# Cache dependencies
+COPY pom.xml .
+COPY terminal-mcp-server/pom.xml terminal-mcp-server/
+COPY mcp-gateway/pom.xml mcp-gateway/
+
+# Copy sources and package JARs
+COPY terminal-mcp-server/src terminal-mcp-server/src
+COPY mcp-gateway/src mcp-gateway/src
+
+RUN mvn clean package -DskipTests
+
+# Runtime stage
+FROM eclipse-temurin:21-jdk-jammy
+WORKDIR /app
+
+# Install git and curl for diagnostic allowlist commands and health checks
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy built JARs
+COPY --from=build /build/terminal-mcp-server/target/terminal-mcp-server-1.0.0.jar /app/terminal-mcp-server.jar
+COPY --from=build /build/mcp-gateway/target/mcp-gateway-1.0.0.jar /app/mcp-gateway.jar
+
+# Setup workspace
+RUN mkdir -p /app/workspace
+ENV MCP_WORKSPACE=/app/workspace \
+    MCP_SERVER_JAR=/app/terminal-mcp-server.jar \
+    SERVER_PORT=8080 \
+    SERVER_ADDRESS=0.0.0.0 \
+    OLLAMA_BASE_URL=http://ollama:11434 \
+    OLLAMA_MODEL=qwen2.5:0.5b
+
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-jar", "/app/mcp-gateway.jar"]

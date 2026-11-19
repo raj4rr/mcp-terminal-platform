@@ -1,0 +1,62 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: mcp-ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    restart: unless-stopped
+
+  ollama-init:
+    image: ollama/ollama:latest
+    container_name: mcp-ollama-init
+    depends_on:
+      - ollama
+    environment:
+      - OLLAMA_HOST=ollama:11434
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "Waiting for Ollama service to start..."
+        while ! /bin/ollama list >/dev/null 2>&1; do
+          sleep 1
+        done
+        echo "Pulling lightweight model: qwen2.5:0.5b..."
+        /bin/ollama pull qwen2.5:0.5b
+        echo "Model qwen2.5:0.5b ready!"
+    restart: "no"
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: mcp-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SERVER_PORT=8080
+      - SERVER_ADDRESS=0.0.0.0
+      - MCP_SERVER_JAR=/app/terminal-mcp-server.jar
+      - MCP_WORKSPACE=/app/workspace
+      - OLLAMA_BASE_URL=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:0.5b
+    volumes:
+      - ./workspace:/app/workspace
+    depends_on:
+      - ollama
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: mcp-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      - gateway
+    restart: unless-stopped
+
+volumes:
+  ollama_data:

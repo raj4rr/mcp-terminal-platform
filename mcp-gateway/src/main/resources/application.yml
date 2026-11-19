@@ -1,0 +1,10 @@
+server:
+  port: ${SERVER_PORT:8080}
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  error:
+    include-message: always
+app:
+  mcp-server-jar: ${MCP_SERVER_JAR:../terminal-mcp-server/target/terminal-mcp-server-1.0.0.jar}
+  workspace: ${MCP_WORKSPACE:./workspace}
+  ollama-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+  ollama-model: ${OLLAMA_MODEL:qwen2.5:0.5b}
