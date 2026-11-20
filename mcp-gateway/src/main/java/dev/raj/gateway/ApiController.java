@@ -28,14 +28,14 @@ public class ApiController {
 
  @PostMapping("/tools/{name}")
  public Map<String,String> tool(@PathVariable String name,@RequestBody(required=false) Map<String,Object> args) {
-  if (!Set.of("list_files","read_file","system_info").contains(name))
+  if (!Set.of("list_files","read_file","write_file","create_folder","delete_file","system_info").contains(name))
    throw new ResponseStatusException(HttpStatus.FORBIDDEN,"Tool requires the approval flow");
   return Map.of("result",mcp.call(name,args==null?Map.of():args));
  }
  @PostMapping("/commands/preview")
  public Map<String,String> preview(@RequestBody Map<String,String> body) {
-  String cmd=body.getOrDefault("command","");
-  if(!COMMANDS.contains(cmd)) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Command unavailable");
+  String cmd=body.getOrDefault("command","").trim();
+  if(cmd.isEmpty()||cmd.length()>1000) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Command must be 1-1000 characters");
   String id=UUID.randomUUID().toString(); approvals.put(id,cmd);
   return Map.of("id",id,"command",cmd,"message","Explicit approval required");
  }

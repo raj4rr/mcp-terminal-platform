@@ -35,11 +35,20 @@ public class McpServerApp {
             .toolCall(Tool.builder("read_file", schema("path", "Relative UTF-8 text file path"))
                 .description("Read a UTF-8 text file inside workspace, max 256 KB").build(),
                 (exchange, request) -> safeCall(() -> workspaceService.readFile(arg(request.arguments(), "path", ""))))
+            .toolCall(Tool.builder("write_file", schema2("path", "Relative file path to create or edit", "content", "File text content"))
+                .description("Create or edit a text file inside the workspace").build(),
+                (exchange, request) -> safeCall(() -> workspaceService.writeFile(arg(request.arguments(), "path", ""), arg(request.arguments(), "content", ""))))
+            .toolCall(Tool.builder("create_folder", schema("path", "Relative folder path to create"))
+                .description("Create a directory in the workspace").build(),
+                (exchange, request) -> safeCall(() -> workspaceService.createDirectory(arg(request.arguments(), "path", ""))))
+            .toolCall(Tool.builder("delete_file", schema("path", "Relative file or directory path to delete"))
+                .description("Delete a file or folder within the workspace").build(),
+                (exchange, request) -> safeCall(() -> workspaceService.deletePath(arg(request.arguments(), "path", ""))))
             .toolCall(Tool.builder("system_info", emptySchema())
                 .description("Return OS, Java version, and workspace path").build(),
                 (exchange, request) -> safeCall(() -> systemInfoService.getSystemInfo(workspace)))
-            .toolCall(Tool.builder("run_command", schema("command", "Exact command from fixed allowlist"))
-                .description("Run an allowlisted diagnostic command; no shell or arbitrary commands").build(),
+            .toolCall(Tool.builder("run_command", schema("command", "Command to execute within workspace (e.g. ls, mkdir, touch, cat, rm, pwd, git)"))
+                .description("Run an allowlisted command in the workspace; no arbitrary shell injection").build(),
                 (exchange, request) -> safeCall(() -> commandService.runCommand(workspace, arg(request.arguments(), "command", ""))))
             .build();
 

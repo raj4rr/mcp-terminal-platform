@@ -116,25 +116,31 @@ Open [http://localhost:5173](http://localhost:5173).
 
 | Tool | Parameters | Description |
 | :--- | :--- | :--- |
-| `list_files` | `path` (relative) | Lists files and directories inside the workspace. |
-| `read_file` | `path` (relative) | Reads a UTF-8 text file (enforces a 256 KB maximum). |
+| `list_files` | `path` | Lists files and directories inside the workspace. |
+| `read_file` | `path` | Reads a UTF-8 text file (enforces a 256 KB maximum). |
+| `write_file` | `path`, `content` | Creates or edits a text file within the workspace. |
+| `create_folder` | `path` | Creates a directory in the workspace. |
+| `delete_file` | `path` | Deletes a file or directory recursively inside the workspace. |
 | `system_info` | *none* | Returns OS name/version, Java runtime, and workspace root. |
-| `run_command` | `command` | Executes an exact allowlisted diagnostic command. Requires explicit preview & approval flow. |
+| `run_command` | `command` | Executes an editable allowlisted command in the workspace. Requires preview & approval. |
 
-### Command Allowlist
+### Allowed Commands & Safe Execution
 
-Commands are dispatched directly to `java.lang.ProcessBuilder` using fixed argument lists—**no shell interpreter is ever spawned**, preventing injection attacks, pipes, and redirection:
+The **Command approval** box is fully editable. You can type commands or click presets:
 
-- `pwd`
-- `date`
-- `whoami`
-- `uname` (executed as `uname -a`)
-- `java -version`
-- `git status` (executed as `git -C <workspace> status --short --branch`)
-- `git log -1 --oneline` (executed as `git -C <workspace> log -1 --oneline`)
-- `ls -la` (executed as `ls -la <workspace>`)
+- **Directory listing**: `ls`, `ls -la`, `ls -l <subdir>`
+- **Directory creation**: `mkdir <folder>`, `mkdir -p <path>`
+- **File creation & writing**: `touch <file>`, `echo "text" > <file>`, `echo "text" >> <file>`
+- **File reading**: `cat <file>`, `head -n 20 <file>`, `tail -n 20 <file>`
+- **File & folder deletion**: `rm <file>`, `rm -r <dir>`, `rm -rf <dir>`, `rmdir <dir>`
+- **File copy & move**: `cp <src> <dst>`, `mv <src> <dst>`
+- **Diagnostics**: `pwd`, `date`, `whoami`, `uname -a`, `java -version`, `git status`, `git log -1 --oneline`
 
-Arbitrary inputs or commands like `rm -rf /`, `cat /etc/passwd`, or shell chains (`&&`, `|`) are strictly rejected.
+#### Security Controls:
+- All commands execute with `workspace` as their working directory.
+- All target paths are checked against directory traversal (`../`) and symlink resolution to prevent escaping the workspace root.
+- Deleting the workspace root itself (`rm -rf .`, `rm -rf /`) is strictly forbidden.
+- Commands are tokenized and executed via `ProcessBuilder` (no arbitrary shell injection).
 
 ---
 

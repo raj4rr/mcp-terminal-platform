@@ -23,6 +23,18 @@ public final class McpToolUtils {
         );
     }
 
+    public static Map<String, Object> schema2(String key1, String desc1, String key2, String desc2) {
+        return Map.of(
+            "type", "object",
+            "properties", Map.of(
+                key1, Map.of("type", "string", "description", desc1),
+                key2, Map.of("type", "string", "description", desc2)
+            ),
+            "required", List.of(key1),
+            "additionalProperties", false
+        );
+    }
+
     public static Map<String, Object> emptySchema() {
         return Map.of("type", "object", "properties", Map.of(), "additionalProperties", false);
     }

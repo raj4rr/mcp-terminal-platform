@@ -167,7 +167,7 @@ if [ ! -f "$GATEWAY_JAR" ]; then
 fi
 
 # 5. Check & install frontend dependencies if necessary
-if [ "$FORCE_BUILD" = true ] || [ ! -d "$SCRIPT_DIR/frontend/node_modules" ]; then
+if [ "$FORCE_BUILD" = true ] || [ ! -d "$SCRIPT_DIR/frontend/node_modules" ] || [ "$SCRIPT_DIR/frontend/package.json" -newer "$SCRIPT_DIR/frontend/node_modules" 2>/dev/null ]; then
     info "Installing frontend dependencies..."
     (cd "$SCRIPT_DIR/frontend" && npm install)
     success "Frontend dependencies installed."
